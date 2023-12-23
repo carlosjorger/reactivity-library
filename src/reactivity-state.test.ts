@@ -22,3 +22,17 @@ test("test sum reactive sum", () => {
     expect(state.sum).toEqual(7);
   });
 });
+test("reactivity with two or more states", () => {
+  const state1 = newState({});
+  state1.a = 1;
+  const state2 = newState({});
+  state2.b = 2;
+  const state3 = newState({});
+  createEffect(() => {
+    state3.sum = state1.a + state2.b;
+  });
+  state2.b = 4;
+  Promise.resolve().then(() => {
+    expect(state3.sum).toEqual(5);
+  });
+});

@@ -1,19 +1,18 @@
 type Effect = () => void;
 export function newState(state: { [key: string | symbol]: any }) {
+  const stateEffect = new EffectState();
   return new Proxy(state, {
     get(obj, prop) {
-      onGet(prop);
+      stateEffect.onGet(prop);
       return obj[prop];
     },
     set(obj, prop, value) {
       obj[prop] = value;
-      onSet(prop, value);
+      stateEffect.onSet(prop, value);
       return true;
     },
   });
 }
-
-const propsToEffects = {} as { [key: string | symbol]: Effect[] };
 
 let currentEffect: Effect | undefined;
 export function createEffect(effect: Effect) {
@@ -21,31 +20,40 @@ export function createEffect(effect: Effect) {
   effect();
   currentEffect = undefined;
 }
-function onGet(prop: string | symbol) {
-  const effects = propsToEffects[prop] ?? (propsToEffects[prop] = []);
-  effects.push(currentEffect);
-}
-const dirtyEffects = [] as Effect[];
-let queued = false;
-function onSet(prop: string | symbol, value: any) {
-  if (!propsToEffects[prop]) {
-    return;
+class EffectState {
+  queued: boolean;
+  dirtyEffects: Effect[];
+  propsToEffects: { [key: string | symbol]: Effect[] };
+  constructor() {
+    this.queued = false;
+    this.dirtyEffects = [];
+    this.propsToEffects = {};
   }
-  dirtyEffects.push(...propsToEffects[prop]);
-  if (!queued) {
-    queued = true;
-    queueMicrotask(() => {
-      queued = false;
-      flush();
-    });
+  onGet(prop: string | symbol) {
+    const effects =
+      this.propsToEffects[prop] ?? (this.propsToEffects[prop] = []);
+    effects.push(currentEffect);
   }
-}
-function flush() {
-  while (dirtyEffects.length) {
-    const effect = dirtyEffects.shift();
-    if (!effect) {
-      continue;
+  onSet(prop: string | symbol, value: any) {
+    if (!this.propsToEffects[prop]) {
+      return;
     }
-    effect();
+    this.dirtyEffects.push(...this.propsToEffects[prop]);
+    if (!this.queued) {
+      this.queued = true;
+      queueMicrotask(() => {
+        this.queued = false;
+        this.flush();
+      });
+    }
+  }
+  flush() {
+    while (this.dirtyEffects.length) {
+      const effect = this.dirtyEffects.shift();
+      if (!effect) {
+        continue;
+      }
+      effect();
+    }
   }
 }
