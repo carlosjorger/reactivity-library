@@ -1,3 +1,4 @@
+type Effect = () => void;
 export function newState(state: { [key: string | symbol]: any }) {
   return new Proxy(state, {
     get(obj, prop) {
@@ -12,10 +13,10 @@ export function newState(state: { [key: string | symbol]: any }) {
   });
 }
 
-const propsToEffects = {} as { [key: string | symbol]: any[] };
+const propsToEffects = {} as { [key: string | symbol]: Effect[] };
 
-let currentEffect: () => void | undefined;
-export function createEffect(effect: () => void) {
+let currentEffect: Effect | undefined;
+export function createEffect(effect: Effect) {
   currentEffect = effect;
   effect();
   currentEffect = undefined;
@@ -24,7 +25,7 @@ function onGet(prop: string | symbol) {
   const effects = propsToEffects[prop] ?? (propsToEffects[prop] = []);
   effects.push(currentEffect);
 }
-const dirtyEffects = [];
+const dirtyEffects = [] as Effect[];
 let queued = false;
 function onSet(prop: string | symbol, value: any) {
   if (!propsToEffects[prop]) {
