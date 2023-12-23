@@ -1,5 +1,6 @@
 type Effect = () => void;
-export function newState(state: { [key: string | symbol]: any }) {
+type Key = string | symbol;
+export function newState(state: { [key: Key]: any }) {
   const stateEffect = new EffectState();
   return new Proxy(state, {
     get(obj, prop) {
@@ -23,18 +24,18 @@ export function createEffect(effect: Effect) {
 class EffectState {
   queued: boolean;
   dirtyEffects: Effect[];
-  propsToEffects: { [key: string | symbol]: Effect[] };
+  propsToEffects: { [key: Key]: Effect[] };
   constructor() {
     this.queued = false;
     this.dirtyEffects = [];
     this.propsToEffects = {};
   }
-  onGet(prop: string | symbol) {
+  onGet(prop: Key) {
     const effects =
       this.propsToEffects[prop] ?? (this.propsToEffects[prop] = []);
     effects.push(currentEffect);
   }
-  onSet(prop: string | symbol, value: any) {
+  onSet(prop: Key, value: any) {
     if (!this.propsToEffects[prop]) {
       return;
     }
