@@ -1,1 +1,1 @@
-console.log("Hello world");
+export { newState } from "./reactivity-state";
