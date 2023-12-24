@@ -40,13 +40,14 @@ class EffectState {
       return;
     }
     this.dirtyEffects.push(...this.propsToEffects[prop]);
-    if (!this.queued) {
-      this.queued = true;
-      queueMicrotask(() => {
-        this.queued = false;
-        this.flush();
-      });
+    if (this.queued) {
+      return;
     }
+    this.queued = true;
+    queueMicrotask(() => {
+      this.queued = false;
+      this.flush();
+    });
   }
   flush() {
     while (this.dirtyEffects.length) {

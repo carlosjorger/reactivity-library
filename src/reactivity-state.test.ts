@@ -36,3 +36,15 @@ test("reactivity with two or more states", () => {
     expect(state3.sum).toEqual(5);
   });
 });
+test("reactivity with method", () => {
+  const sum = (a: number, b: number) => a + b;
+  const state = newState({});
+  state.a = 1;
+  state.b = 2;
+  createEffect(() => {
+    state.sum = sum(state.a, state.b);
+  });
+  Promise.resolve().then(() => {
+    expect(state.sum).toEqual(3);
+  });
+});
